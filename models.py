@@ -47,5 +47,6 @@ class Progress(db.Model):
     completion_percentage = db.Column(db.Integer)
     last_updated = db.Column(db.DateTime, default=datetime.utcnow)
 
-    def __repr__(self):
-        return f"<User {self.name}>"
+   def __repr__(self):
+    return f"<Progress user_id={self.user_id} subject_id={self.subject_id}>"
+
