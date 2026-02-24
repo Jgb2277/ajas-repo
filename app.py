@@ -1,5 +1,6 @@
 from flask import Flask, render_template, request, redirect, session, url_for
 from models import db, User, Subject, Module, Question, Assessment,Result,ChatMessage
+from werkzeug.security import generate_password_hash, check_password_hash
 import os
 from flask_socketio import SocketIO, emit
 
@@ -89,6 +90,7 @@ def signup():
 # ---------------- ADD USER ----------------
 @app.route('/add_user', methods=['POST'])
 def add_user():
+
     fname = request.form.get('fname')
     lname = request.form.get('lname')
     email = request.form.get('email')
@@ -104,7 +106,7 @@ def add_user():
     new_user = User(
         name=full_name,
         email=email,
-        password_hash=password   # temporarily plain text
+        password_hash=generate_password_hash(password)   # temporarily plain text
     )
 
     db.session.add(new_user)
@@ -119,15 +121,13 @@ def login_validation():
     email = request.form.get('email')
     password = request.form.get('password')
 
-    user = User.query.filter_by(email=email, password_hash=password).first()
-
-    if user:
+    user = User.query.filter_by(email=email).first()
+    if user and check_password_hash(user.password_hash, password):
         session['user_email'] = user.email
         session['user_name'] = user.name
         return redirect('/home')
     else:
         return redirect('/')
-
 
 # ---------------- HOME ----------------
 @app.route('/home')
@@ -153,7 +153,16 @@ def logout():
 @app.route('/subject/<int:subject_id>')
 def show_modules(subject_id):
     modules = Module.query.filter_by(subject_id=subject_id).all()
-    return render_template('modules.html', modules=modules)
+    
+    user = User.query.filter_by(email=session['user_email']).first()
+    
+    # Get list of module IDs already attempted by this user
+    completed = Result.query.filter_by(user_id=user.id).all()
+    completed_module_ids = [r.module_id for r in completed]
+    
+    return render_template('modules.html', 
+                           modules=modules,
+                           completed_module_ids=completed_module_ids)
 
 
 # ---------------- START QUIZ ----------------
