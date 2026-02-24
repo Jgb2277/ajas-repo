@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<h3 class="section-title">SELECT MODULE</h3>
+
+<div class="subjects">
+    {% for module in modules %}
+        <a href="{{ url_for('start_quiz', module_id=module.id) }}"
+           class="subject-btn">
+            {{ module.module_name }}
+        </a>
+    {% endfor %}
+</div>
+
+{% endblock %}

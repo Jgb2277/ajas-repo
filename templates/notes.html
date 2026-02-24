@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<h2>Quiz Result</h2>
+
+<h3>Your Score: {{ score }} / {{ attempted }}</h3>
+<h3>Your Level: {{ level }}</h3>
+
+<hr>
+
+<h2>{{ level }} Level Notes</h2>
+
+{% if level == "Basic" %}
+    <p>Show Basic Notes Here</p>
+{% elif level == "Intermediate" %}
+    <p>Show Intermediate Notes Here</p>
+{% else %}
+    <p>Show Advanced Notes Here</p>
+{% endif %}
+
+<br>
+<a href="{{ url_for('home') }}" class="subject-btn">Back to Home</a>
+
+{% endblock %}

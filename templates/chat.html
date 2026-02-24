@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<!-- Socket.IO -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+
+<!-- jQuery -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+<script>
+$(document).ready(function(){
+
+    var socket = io();
+
+    socket.on('connect', function(){
+        console.log("Connected");
+    });
+
+    socket.on('message', function(data){
+        $('.chat-area').append(
+            '<p><strong>' + data.username + ':</strong> ' + data.message + '</p>'
+        );
+
+        $(".chat-area").scrollTop($(".chat-area")[0].scrollHeight);
+    });
+
+    $('#send-btn').click(function(){
+
+        var msg = $('.text-chat').val().trim();
+
+        if(msg !== ""){
+
+            socket.emit('chat_message',{
+                username: "{{ session['user_name'] }}",
+                message: msg
+            });
+
+            $('.text-chat').val("");
+        }
+
+    });
+
+});
+</script>
+
+<div class="chat-container">
+    <div class="chat-area">
+        {% for msg in messages %}
+            <p><strong>{{ msg.username }}:</strong> {{ msg.message }}</p>
+        {% endfor %}
+    </div>
+
+    <div class="send-area">
+        <form class="chat-form">
+            <input type="text" name="message" class="text-chat"
+                placeholder="Type a message..." required>
+
+            <button id="send-btn" type="submit">Send</button>
+        </form>
+    </div>
+</div>
+
+{% endblock %}

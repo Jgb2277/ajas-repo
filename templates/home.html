@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="profile-card">
+    <div class="avatar">👤</div>
+    <div class="info">
+        <p><b>Name:</b> {{ fname }}</p>
+        <p><b>Email:</b> {{ email }}</p>
+        <p><b>Semester:</b> 6th Semester</p>
+        <p><b>College:</b> College of Engineering Chengannur</p>
+    </div>
+</div>
+
+<h3 class="section-title">SUBJECTS</h3>
+
+<div class="subjects">
+    <a href="{{ url_for('show_modules', subject_id=1) }}" class="subject-btn">AAD</a>
+    <a href="{{ url_for('show_modules', subject_id=2) }}" class="subject-btn">IEFT</a>
+    <a href="{{ url_for('show_modules', subject_id=3) }}" class="subject-btn">CG</a>
+    <a href="{{ url_for('show_modules', subject_id=4) }}" class="subject-btn">CD</a>
+    <a href="{{ url_for('show_modules', subject_id=5) }}" class="subject-btn">PYTHON</a>
+    <a href="{{ url_for('show_modules', subject_id=6) }}" class="subject-btn">ML</a>
+</div>
+
+{% endblock %}

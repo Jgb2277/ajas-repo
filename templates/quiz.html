@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<h2>Module Quiz</h2>
+
+<form method="POST"
+      action="{{ url_for('submit_quiz', module_id=module_id) }}"
+      novalidate>
+
+    {% for question in questions %}
+
+        <div style="margin-bottom:20px;">
+            <p><b>{{ loop.index }}. {{ question.question_text }}</b></p>
+
+            <input type="radio" name="{{ question.id }}"
+                   value="{{ question.option1 }}">
+            {{ question.option1 }} <br>
+
+            <input type="radio" name="{{ question.id }}"
+                   value="{{ question.option2 }}">
+            {{ question.option2 }} <br>
+
+            <input type="radio" name="{{ question.id }}"
+                   value="{{ question.option3 }}">
+            {{ question.option3 }} <br>
+
+            <input type="radio" name="{{ question.id }}"
+                   value="{{ question.option4 }}">
+            {{ question.option4 }} <br>
+        </div>
+
+        <hr>
+
+    {% endfor %}
+
+    <button type="submit" class="subject-btn">Submit Quiz</button>
+
+</form>
+
+{% endblock %}
