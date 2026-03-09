@@ -54,7 +54,7 @@ export default function StudentDashboard() {
                                 <div className="profile-details">
                                     <p><strong>Name:</strong> {user?.name}</p>
                                     <p><strong>Email:</strong> {user?.email}</p>
-                                    <p><strong>College:</strong> Developer Academy</p>
+                                    <p><strong>College:</strong> College Of Engineering Chengannur</p>
                                     <p><strong>Role:</strong> Student Status</p>
                                 </div>
                             </div>
@@ -63,6 +63,7 @@ export default function StudentDashboard() {
                     } />
                     <Route path="/timetable" element={<TimetableView />} />
                     <Route path="/assessment" element={<SubjectsView />} />
+                    <Route path="/assessment/take/:subjectId" element={<AssessmentView />} />
                     <Route path="/assessment/take/:subjectId/:moduleId" element={<AssessmentView />} />
                     <Route path="/chat" element={<LiveChat />} />
                 </Routes>

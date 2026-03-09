@@ -4,43 +4,59 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../../context/AuthContext';
 
 export default function AssessmentView() {
-    const { subjectId, moduleId } = useParams();
+    const { subjectId } = useParams();          // only subjectId in URL now
     const { user } = useContext(AuthContext);
     const navigate = useNavigate();
 
+    const [modules, setModules] = useState([]);
+    const [currentModuleIndex, setCurrentModuleIndex] = useState(0);
     const [questions, setQuestions] = useState([]);
-    const [answers, setAnswers] = useState({}); // { question_id: selected_option }
+    const [answers, setAnswers] = useState({});
     const [loading, setLoading] = useState(true);
     const [submitting, setSubmitting] = useState(false);
-    const [result, setResult] = useState(null);
+    const [moduleResults, setModuleResults] = useState([]);  // result per module
+    const [allDone, setAllDone] = useState(false);           // all modules submitted
 
+    // Load all modules for the subject
     useEffect(() => {
-        // Fetch questions for module
-        if (moduleId) {
-            axios.get(`http://localhost:5000/api/student/modules/${moduleId}/questions`)
-                .then(res => {
-                    setQuestions(res.data);
-                    setLoading(false);
-                })
-                .catch(err => {
-                    console.error('Error fetching questions:', err);
-                    setLoading(false);
-                });
-        }
-    }, [moduleId]);
+        axios.get(`http://localhost:5000/api/student/subjects/${subjectId}/modules`)
+            .then(res => {
+                setModules(res.data);
+                setLoading(false);
+            })
+            .catch(err => {
+                console.error('Error fetching modules:', err);
+                setLoading(false);
+            });
+    }, [subjectId]);
+
+    // Load questions whenever the current module changes
+    useEffect(() => {
+        if (modules.length === 0) return;
+        const mod = modules[currentModuleIndex];
+        if (!mod) return;
+        setLoading(true);
+        setAnswers({});
+        axios.get(`http://localhost:5000/api/student/modules/${mod.id}/questions`)
+            .then(res => {
+                setQuestions(res.data);
+                setLoading(false);
+            })
+            .catch(err => {
+                console.error('Error fetching questions:', err);
+                setLoading(false);
+            });
+    }, [modules, currentModuleIndex]);
 
     const handleOptionSelect = (questionId, option) => {
-        setAnswers(prev => ({
-            ...prev,
-            [questionId]: option
-        }));
+        setAnswers(prev => ({ ...prev, [questionId]: option }));
     };
 
-    const handleSubmit = async (e) => {
+    const handleSubmitModule = async (e) => {
         e.preventDefault();
         setSubmitting(true);
+        const mod = modules[currentModuleIndex];
 
-        // Format answers array
         const formattedAnswers = Object.entries(answers).map(([qId, option]) => ({
             question_id: parseInt(qId),
             selected_option: option
@@ -50,63 +66,155 @@ export default function AssessmentView() {
             const res = await axios.post('http://localhost:5000/api/student/assessments', {
                 user_id: user.id,
                 subject_id: parseInt(subjectId),
+                module_id: mod.id,
                 answers: formattedAnswers
             });
-            setResult(res.data);
+
+            const result = { ...res.data, moduleName: mod.name };
+            const updatedResults = [...moduleResults, result];
+            setModuleResults(updatedResults);
+
+            // Advance to next module or mark done
+            if (currentModuleIndex + 1 < modules.length) {
+                setCurrentModuleIndex(prev => prev + 1);
+            } else {
+                setAllDone(true);
+            }
         } catch (err) {
             console.error('Submission failed', err);
-            alert('Failed to submit assessment.');
+            alert('Failed to submit module assessment.');
         }
         setSubmitting(false);
     };
 
-    if (loading) return <div>Loading Assessment...</div>;
+    // ─── All modules done — Summary screen ───────────────────────────────────
+    if (allDone) {
+        const levelColor = (lvl) =>
+            lvl === 'Advanced' ? '#28a745' : lvl === 'Intermediate' ? '#ffc107' : '#dc3545';
+        const levelIcon = (lvl) =>
+            lvl === 'Advanced' ? '🏆' : lvl === 'Intermediate' ? '📈' : '📚';
 
-    if (result) {
         return (
-            <div style={{ maxWidth: '600px', margin: '0 auto', textAlign: 'center', padding: '3rem 2rem', backgroundColor: '#f9f9f9', borderRadius: '16px', border: '1px solid #eaeaea' }}>
-                <div style={{ fontSize: '4rem', marginBottom: '1rem', color: result.level === 'Advanced' ? '#28a745' : result.level === 'Intermediate' ? '#ffc107' : '#dc3545' }}>
-                    {result.level === 'Advanced' ? '🏆' : result.level === 'Intermediate' ? '📈' : '📚'}
+            <div style={{ maxWidth: '680px', margin: '0 auto', padding: '2rem 1rem' }}>
+                <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
+                    <div style={{ fontSize: '3.5rem', marginBottom: '0.75rem' }}>✅</div>
+                    <h2 style={{ color: 'var(--text-dark)', marginBottom: '0.5rem' }}>All Modules Complete!</h2>
+                    <p style={{ color: 'var(--text-light)', fontSize: '0.95rem' }}>
+                        Here's a summary of your performance across all modules.
+                    </p>
                 </div>
-                <h2 style={{ color: 'var(--text-dark)', marginBottom: '1rem' }}>Assessment Complete!</h2>
-                <p style={{ fontSize: '1.2rem', marginBottom: '2rem' }}>You have been assigned to the <strong>{result.level}</strong> level based on algorithmic evaluation.</p>
 
-                <div style={{ display: 'flex', justifyContent: 'center', gap: '2rem', marginBottom: '2.5rem' }}>
-                    <div style={{ textAlign: 'center' }}>
-                        <div style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>{result.scores.basic}</div>
-                        <div style={{ fontSize: '0.85rem', color: 'var(--text-light)', textTransform: 'uppercase' }}>Basic</div>
-                    </div>
-                    <div style={{ textAlign: 'center' }}>
-                        <div style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>{result.scores.intermediate}</div>
-                        <div style={{ fontSize: '0.85rem', color: 'var(--text-light)', textTransform: 'uppercase' }}>Intermediate</div>
-                    </div>
-                    <div style={{ textAlign: 'center' }}>
-                        <div style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>{result.scores.advanced}</div>
-                        <div style={{ fontSize: '0.85rem', color: 'var(--text-light)', textTransform: 'uppercase' }}>Advanced</div>
-                    </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginBottom: '2.5rem' }}>
+                    {moduleResults.map((r, idx) => (
+                        <div key={idx} style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            padding: '1.25rem 1.5rem',
+                            border: '1px solid #eaeaea',
+                            borderRadius: '12px',
+                            backgroundColor: '#fdfdfd'
+                        }}>
+                            <div>
+                                <div style={{ fontWeight: '600', marginBottom: '4px' }}>{r.moduleName}</div>
+                                <div style={{ fontSize: '0.82rem', color: 'var(--text-light)' }}>
+                                    Basic: {r.scores.basic} &nbsp;|&nbsp; Inter: {r.scores.intermediate} &nbsp;|&nbsp; Adv: {r.scores.advanced}
+                                </div>
+                            </div>
+                            <div style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '6px',
+                                padding: '6px 14px',
+                                borderRadius: '20px',
+                                fontSize: '0.85rem',
+                                fontWeight: 'bold',
+                                backgroundColor: r.level === 'Advanced' ? '#d4edda' : r.level === 'Intermediate' ? '#fff3cd' : '#f8d7da',
+                                color: levelColor(r.level)
+                            }}>
+                                {levelIcon(r.level)} {r.level}
+                            </div>
+                        </div>
+                    ))}
                 </div>
 
                 <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
                     <button className="btn btn-secondary" onClick={() => navigate('/student')}>Back to Home</button>
-                    <button className="btn" onClick={() => navigate('/student/timetable')}>View New Timetable</button>
+                    <button className="btn" onClick={() => navigate('/student/timetable')}>View Timetable →</button>
                 </div>
             </div>
         );
     }
 
+    // ─── Loading state ────────────────────────────────────────────────────────
+    if (loading) return <div>Loading Assessment...</div>;
+    if (modules.length === 0) return <div style={{ padding: '2rem' }}>No modules found for this subject.</div>;
+
+    const currentModule = modules[currentModuleIndex];
+
+    // ─── Quiz screen ──────────────────────────────────────────────────────────
     return (
         <div style={{ maxWidth: '800px', margin: '0 auto' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '2rem', borderBottom: '1px solid #eaeaea', paddingBottom: '1rem' }}>
-                <h3>Knowledge Assessment Quiz</h3>
-                <span style={{ padding: '6px 12px', backgroundColor: '#ffebee', color: 'var(--primary)', borderRadius: '20px', fontSize: '0.85rem', fontWeight: 'bold' }}>
-                    {questions.length} Questions
-                </span>
+            {/* Progress header */}
+            <div style={{ marginBottom: '1.5rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
+                    <h3 style={{ margin: 0 }}>Module Quiz — {currentModule.name}</h3>
+                    <span style={{ padding: '6px 12px', backgroundColor: '#ffebee', color: 'var(--primary)', borderRadius: '20px', fontSize: '0.85rem', fontWeight: 'bold' }}>
+                        {currentModuleIndex + 1} / {modules.length}
+                    </span>
+                </div>
+
+                {/* Progress bar */}
+                <div style={{ height: '6px', backgroundColor: '#f0f0f0', borderRadius: '3px', overflow: 'hidden' }}>
+                    <div style={{
+                        height: '100%',
+                        width: `${((currentModuleIndex) / modules.length) * 100}%`,
+                        backgroundColor: 'var(--primary)',
+                        borderRadius: '3px',
+                        transition: 'width 0.4s ease'
+                    }} />
+                </div>
+
+                {/* Module breadcrumb */}
+                <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.75rem', flexWrap: 'wrap' }}>
+                    {modules.map((mod, idx) => (
+                        <span key={mod.id} style={{
+                            padding: '3px 10px',
+                            borderRadius: '12px',
+                            fontSize: '0.75rem',
+                            fontWeight: idx === currentModuleIndex ? '700' : '400',
+                            backgroundColor: idx < currentModuleIndex ? '#d4edda' : idx === currentModuleIndex ? '#ffebee' : '#f0f0f0',
+                            color: idx < currentModuleIndex ? '#155724' : idx === currentModuleIndex ? 'var(--primary)' : 'var(--text-light)'
+                        }}>
+                            {idx < currentModuleIndex ? '✓ ' : ''}{mod.name}
+                        </span>
+                    ))}
+                </div>
             </div>
 
+            {/* Questions */}
             {questions.length === 0 ? (
-                <p>No questions have been added for this module yet.</p>
+                <div style={{ padding: '2rem', textAlign: 'center', border: '1px dashed #ccc', borderRadius: '12px' }}>
+                    <p>No questions have been added for this module yet.</p>
+                    <button className="btn" style={{ marginTop: '1rem' }} onClick={() => {
+                        if (currentModuleIndex + 1 < modules.length) {
+                            setCurrentModuleIndex(prev => prev + 1);
+                        } else {
+                            setAllDone(true);
+                        }
+                    }}>
+                        {currentModuleIndex + 1 < modules.length ? 'Skip to Next Module →' : 'Finish'}
+                    </button>
+                </div>
             ) : (
-                <form onSubmit={handleSubmit}>
+                <form onSubmit={handleSubmitModule}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem', borderBottom: '1px solid #eaeaea', paddingBottom: '1rem' }}>
+                        <span style={{ color: 'var(--text-light)', fontSize: '0.9rem' }}>Knowledge Assessment Quiz</span>
+                        <span style={{ padding: '6px 12px', backgroundColor: '#f0f0f0', borderRadius: '20px', fontSize: '0.85rem' }}>
+                            {questions.length} Questions
+                        </span>
+                    </div>
+
                     {questions.map((q, i) => (
                         <div key={q.id} style={{ marginBottom: '2rem', padding: '1.5rem', backgroundColor: '#fdfdfd', border: '1px solid #eaeaea', borderRadius: '12px' }}>
                             <h4 style={{ marginBottom: '1rem', fontWeight: '600', fontSize: '1.05rem' }}>
@@ -142,8 +250,8 @@ export default function AssessmentView() {
                     ))}
 
                     <div style={{ textAlign: 'right', marginTop: '2rem', borderTop: '1px solid #eaeaea', paddingTop: '2rem' }}>
-                        <button type="submit" className="btn" style={{ padding: '1rem 3rem', fontSize: '1.1rem' }} disabled={submitting || questions.length === 0}>
-                            {submitting ? 'Auto-Evaluating...' : 'Submit Assessment'}
+                        <button type="submit" className="btn" style={{ padding: '1rem 3rem', fontSize: '1.1rem' }} disabled={submitting}>
+                            {submitting ? 'Submitting...' : currentModuleIndex + 1 < modules.length ? `Submit & Next Module →` : 'Submit Final Module ✓'}
                         </button>
                     </div>
                 </form>

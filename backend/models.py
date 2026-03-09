@@ -41,6 +41,7 @@ class Assessment(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     subject_id = db.Column(db.Integer, db.ForeignKey('subject.id'), nullable=False)
+    module_id = db.Column(db.Integer, db.ForeignKey('module.id'), nullable=True)
     score_basic = db.Column(db.Integer, default=0)
     score_intermediate = db.Column(db.Integer, default=0)
     score_advanced = db.Column(db.Integer, default=0)
@@ -48,6 +49,7 @@ class Assessment(db.Model):
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
     
     subject = db.relationship('Subject', backref=db.backref('assessments', lazy=True))
+    module = db.relationship('Module', backref=db.backref('assessments', lazy=True))
 
 class Message(db.Model):
     id = db.Column(db.Integer, primary_key=True)
