@@ -1,0 +1,43 @@
+# EduPath - Implementation Walkthrough
+
+The **EduPath – Smart Exam Preparation & Quiz Management System** has been fully developed following the requirements, merging a Flask-SQLAlchemy backend with a highly dynamic React.js frontend. 
+
+## Completed Objectives
+
+### 1. Robust Application Architecture     
+We have successfully constructed a scalable project in `c:/Antigravity/EDupath/` with complete separation of concerns:
+- **`backend/`**: A fully decoupled Flask REST API application leveraging a robust SQLite ORM database for persistence and `Flask-SocketIO` for parallel real-time chat websockets.
+- **`frontend/`**: A standard Vite-React SPA dynamically routed to support Role-Based Access Control (Admin vs. Student).
+
+### 2. Algorithmic Knowledge Assessments & Scheduling
+The core logic engine of EduPath is fully operational:
+- **Quizzes**: Students can execute module quizzes. The backend auto-evaluates scores mapped to Basic, Intermediate, and Advanced difficulty tiers based on the exact threshold permutations requested.
+- **Dynamic Timetables**: A sophisticated parsing schema automatically allocates study time for any subject with an exam date $\ge$ 4 days away. Low-scoring subjects are compensated with more allocated daily study hours and foundational notes, while higher achievements necessitate fewer hours.
+
+### 3. Sociable Study via Live Chats
+A persistent student-to-student community chat room is active inside the "Live Chat Box" menu. State-synchronized via websockets across users, with previous message histories automatically populating globally upon new connections.
+
+### 4. Gorgeous Premium UI
+We recreated the slick Red User Interface shown in the visual reference materials. Using Vanilla CSS custom token variables and sleek glass/card-based micro-animations, the entire portal functions smoothly without bloated dependencies like Tailwind.
+
+## Running the Application
+
+To interact with the platforms side-by-side, open two different command prompt terminals.
+
+**Terminal 1 (Run the Flask API Server):**
+```bash
+cd c:\Antigravity\EDupath\backend
+python -m venv venv
+venv\Scripts\activate
+pip install -r requirements.txt
+python app.py
+```
+
+**Terminal 2 (Run the React Frontend Server):**
+```bash
+cd c:\Antigravity\EDupath\frontend
+npm run dev
+```
+
+> [!TIP]
+> The app is connected. Once you run the frontend server, click the local network link (typically `http://localhost:5173/`). You can register an **Admin** user to build questions and subjects, and register multiple **Student** accounts to take quizzes and chat simultaneously in separate browser windows!
