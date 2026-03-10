@@ -22,11 +22,11 @@ class Module(db.Model):
     subject_id = db.Column(db.Integer, db.ForeignKey('subject.id'), nullable=False)
     name = db.Column(db.String(150), nullable=False)
     basic_yt = db.Column(db.String(255), nullable=True)
-    basic_pdf = db.Column(db.String(255), nullable=True)
+    basic_pdf = db.Column(db.Text, nullable=True)
     intermediate_yt = db.Column(db.String(255), nullable=True)
-    intermediate_pdf = db.Column(db.String(255), nullable=True)
+    intermediate_pdf = db.Column(db.Text, nullable=True)
     advanced_yt = db.Column(db.String(255), nullable=True)
-    advanced_pdf = db.Column(db.String(255), nullable=True)
+    advanced_pdf = db.Column(db.Text, nullable=True)
     questions = db.relationship('Question', backref='module', lazy=True, cascade='all, delete-orphan')
 
 class Question(db.Model):

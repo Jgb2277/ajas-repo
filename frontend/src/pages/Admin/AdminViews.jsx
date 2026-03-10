@@ -326,7 +326,7 @@ export function InputNotes() {
     const [selectedModule, setSelectedModule] = useState('');
     const [level, setLevel] = useState('basic');
     const [ytLink, setYtLink] = useState('');
-    const [pdfFile, setPdfFile] = useState(null);
+    const [pdfFiles, setPdfFiles] = useState([]);
     const [uploading, setUploading] = useState(false);
 
     useEffect(() => {
@@ -362,16 +362,14 @@ export function InputNotes() {
         formData.append('module_id', selectedModule);
         formData.append('level', level);
         formData.append('yt_link', ytLink);
-        if (pdfFile) {
-            formData.append('pdf_file', pdfFile);
-        }
+        pdfFiles.forEach(f => formData.append('pdf_files', f));
 
         try {
             await axios.post(`${API}/api/admin/notes`, formData, {
                 headers: { 'Content-Type': 'multipart/form-data' }
             });
             setYtLink('');
-            setPdfFile(null);
+            setPdfFiles([]);
             alert(`${level.charAt(0).toUpperCase() + level.slice(1)} Notes updated successfully!`);
         } catch (err) {
             console.error(err);
@@ -412,8 +410,20 @@ export function InputNotes() {
                 </div>
 
                 <div>
-                    <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>PDF Notes Upload (Optional)</label>
-                    <input type="file" className="input-field" accept=".pdf" onChange={e => setPdfFile(e.target.files[0])} style={{ padding: '0.5rem' }} />
+                    <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>PDF Notes Upload — Multiple Allowed (Optional)</label>
+                    <input
+                        type="file"
+                        className="input-field"
+                        accept=".pdf"
+                        multiple
+                        onChange={e => setPdfFiles(Array.from(e.target.files))}
+                        style={{ padding: '0.5rem' }}
+                    />
+                    {pdfFiles.length > 0 && (
+                        <div style={{ marginTop: '0.4rem', fontSize: '0.82rem', color: 'var(--text-light)' }}>
+                            {pdfFiles.length} file{pdfFiles.length > 1 ? 's' : ''} selected: {pdfFiles.map(f => f.name).join(', ')}
+                        </div>
+                    )}
                 </div>
 
                 <div>

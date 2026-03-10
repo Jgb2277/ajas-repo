@@ -83,23 +83,35 @@ def upload_notes():
     if not module or level not in ['basic', 'intermediate', 'advanced']:
         return jsonify({'error': 'Invalid module or level'}), 400
 
-    pdf_file = request.files.get('pdf_file')
-    pdf_path = None
-    if pdf_file and pdf_file.filename:
-        filename = secure_filename(f"{module_id}_{level}_{pdf_file.filename}")
-        save_path = os.path.join(current_app.root_path, 'uploads', 'pdfs', filename)
-        pdf_file.save(save_path)
-        pdf_path = f"/files/{filename}"
+    pdf_files = request.files.getlist('pdf_files')
+    new_paths = []
+    for pdf_file in pdf_files:
+        if pdf_file and pdf_file.filename:
+            import uuid
+            unique_id = uuid.uuid4().hex[:8]
+            filename = secure_filename(f"{module_id}_{level}_{unique_id}_{pdf_file.filename}")
+            save_path = os.path.join(current_app.root_path, 'uploads', 'pdfs', filename)
+            pdf_file.save(save_path)
+            new_paths.append(f"/files/{filename}")
 
     if level == 'basic':
         module.basic_yt = yt_link
-        if pdf_path: module.basic_pdf = pdf_path
+        if new_paths:
+            existing = module.basic_pdf or ''
+            all_paths = [p for p in existing.split(',') if p] + new_paths
+            module.basic_pdf = ','.join(all_paths)
     elif level == 'intermediate':
         module.intermediate_yt = yt_link
-        if pdf_path: module.intermediate_pdf = pdf_path
+        if new_paths:
+            existing = module.intermediate_pdf or ''
+            all_paths = [p for p in existing.split(',') if p] + new_paths
+            module.intermediate_pdf = ','.join(all_paths)
     elif level == 'advanced':
         module.advanced_yt = yt_link
-        if pdf_path: module.advanced_pdf = pdf_path
+        if new_paths:
+            existing = module.advanced_pdf or ''
+            all_paths = [p for p in existing.split(',') if p] + new_paths
+            module.advanced_pdf = ','.join(all_paths)
 
     db.session.commit()
-    return jsonify({'message': f'{level.capitalize()} notes updated successfully'}), 200
+    return jsonify({'message': f'{level.capitalize()} notes updated successfully', 'pdf_count': len(new_paths)}), 200

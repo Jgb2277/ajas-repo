@@ -239,7 +239,6 @@ export default function AssessmentView() {
                                             name={`question_${q.id}`}
                                             value={opt}
                                             onChange={() => handleOptionSelect(q.id, opt)}
-                                            required
                                             style={{ marginRight: '10px' }}
                                         />
                                         {opt}
